@@ -1,8 +1,6 @@
-namespace UrlShortener.Application.Features.CreateShortUrl;
+namespace UrlShortener.Domain;
 
-public sealed record CreateShortUrlCommand(string Url, DateTimeOffset? ExpiresAtUtc, DeepLinkTargetsCommand? DeepLinks);
-
-public sealed record DeepLinkTargetsCommand(
+public sealed record DeepLinkTargets(
     string? IosUrl,
     string? AndroidUrl,
     string? DesktopUrl,

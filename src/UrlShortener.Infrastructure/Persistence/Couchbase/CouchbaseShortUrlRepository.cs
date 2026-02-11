@@ -1,5 +1,6 @@
 using Couchbase.KeyValue;
 using Couchbase.Query;
+using Couchbase.Core.Exceptions.KeyValue;
 using UrlShortener.Application.Abstractions;
 using UrlShortener.Domain;
 using UrlShortener.Infrastructure.Persistence.Common;
@@ -59,23 +60,23 @@ public sealed class CouchbaseShortUrlRepository : BaseInstrumentedRepository, IS
             VALUES ($code, {""code"": $code, ""totalResolutions"": 1, ""lastResolvedAtUtc"": $resolvedAtUtc})
             RETURNING *;";
 
-        await _scope.QueryAsync<dynamic>(statement, options =>
-        {
-            options.Parameter("code", code);
-            options.Parameter("resolvedAtUtc", resolvedAtUtc.UtcDateTime);
-            options.CancellationToken(cancellationToken);
-        });
+        await _scope.QueryAsync<dynamic>(
+            statement,
+            new QueryOptions()
+                .Parameter("code", code)
+                .Parameter("resolvedAtUtc", resolvedAtUtc.UtcDateTime)
+                .CancellationToken(cancellationToken));
     }
 
     public async Task<ShortUrlAnalytics> GetAnalyticsAsync(string code, CancellationToken cancellationToken)
     {
         using var activity = StartActivity("get_analytics", "couchbase");
         const string statement = "SELECT a.code, a.totalResolutions, a.lastResolvedAtUtc FROM shorturlanalytics AS a USE KEYS $code";
-        var result = await _scope.QueryAsync<ShortUrlAnalytics>(statement, options =>
-        {
-            options.Parameter("code", code);
-            options.CancellationToken(cancellationToken);
-        });
+        var result = await _scope.QueryAsync<ShortUrlAnalytics>(
+            statement,
+            new QueryOptions()
+                .Parameter("code", code)
+                .CancellationToken(cancellationToken));
 
         await foreach (var row in result.Rows.ConfigureAwait(false))
         {

@@ -19,6 +19,18 @@ public sealed class ShortUrlDocument
 
     [BsonElement("expiresAtUtc")]
     public DateTime? ExpiresAtUtc { get; init; }
+
+    [BsonElement("deepLinkIos")]
+    public string? DeepLinkIos { get; init; }
+
+    [BsonElement("deepLinkAndroid")]
+    public string? DeepLinkAndroid { get; init; }
+
+    [BsonElement("deepLinkDesktop")]
+    public string? DeepLinkDesktop { get; init; }
+
+    [BsonElement("deepLinkFallback")]
+    public string? DeepLinkFallback { get; init; }
 }
 
 public sealed class ShortUrlAnalyticsDocument

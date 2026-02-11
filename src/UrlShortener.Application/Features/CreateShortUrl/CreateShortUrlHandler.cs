@@ -23,7 +23,15 @@ public sealed class CreateShortUrlHandler
         }
 
         var code = await _codeGenerator.GenerateUniqueCodeAsync(8, cancellationToken);
-        var entity = ShortUrl.Create(code, command.Url, command.ExpiresAtUtc);
+        var deepLinks = command.DeepLinks is { HasAny: true }
+            ? new DeepLinkTargets(
+                command.DeepLinks.IosUrl,
+                command.DeepLinks.AndroidUrl,
+                command.DeepLinks.DesktopUrl,
+                command.DeepLinks.FallbackUrl ?? command.Url)
+            : null;
+
+        var entity = ShortUrl.Create(code, command.Url, command.ExpiresAtUtc, deepLinks);
 
         await _repository.CreateAsync(entity, cancellationToken);
 
@@ -31,6 +39,13 @@ public sealed class CreateShortUrlHandler
             entity.Code,
             $"{baseUrl.TrimEnd('/')}/{entity.Code}",
             entity.CreatedAtUtc,
-            entity.ExpiresAtUtc);
+            entity.ExpiresAtUtc,
+            entity.DeepLinks is null
+                ? null
+                : new DeepLinkTargetsResponse(
+                    entity.DeepLinks.IosUrl,
+                    entity.DeepLinks.AndroidUrl,
+                    entity.DeepLinks.DesktopUrl,
+                    entity.DeepLinks.FallbackUrl));
     }
 }
