@@ -97,4 +97,27 @@ public static class DependencyInjection
 
         return new CouchbaseShortUrlRepository(scope, collection);
     }
+
+    private static string ResolveConnectionString(IConfiguration configuration, string provider, string fallback)
+    {
+        var providerKey = provider?.Trim().ToLowerInvariant();
+        var preferred = providerKey switch
+        {
+            "postgresql" => configuration.GetConnectionString("PostgreSql"),
+            "mongodb" => configuration.GetConnectionString("MongoDb"),
+            "couchbase" => configuration.GetConnectionString("Couchbase"),
+            "sqlserver" or "mssql" => configuration.GetConnectionString("SqlServer"),
+            "mysql" => configuration.GetConnectionString("MySql"),
+            _ => null
+        };
+
+        if (!string.IsNullOrWhiteSpace(preferred))
+        {
+            return preferred;
+        }
+
+        return !string.IsNullOrWhiteSpace(fallback)
+            ? fallback
+            : throw new InvalidOperationException($"Connection string is required for provider '{provider}'.");
+    }
 }

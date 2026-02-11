@@ -66,6 +66,30 @@ OpenTelemetry configured with:
 - `GET /{code}` → resolve (redirect)
 - `GET /api/urls/{code}/analytics` → analytics
 
+### Deep link payload (optional)
+
+`POST /api/urls` accepts optional deep links:
+
+```json
+{
+  "url": "https://example.com/fallback",
+  "expiresAtUtc": null,
+  "deepLinks": {
+    "iosUrl": "myapp://product/42",
+    "androidUrl": "myapp://product/42",
+    "desktopUrl": "https://example.com/product/42",
+    "fallbackUrl": "https://example.com/fallback"
+  }
+}
+```
+
+Resolution behavior:
+
+- iOS user-agent → `deepLinks.iosUrl` (if present)
+- Android user-agent → `deepLinks.androidUrl` (if present)
+- Other clients → `deepLinks.desktopUrl` (if present)
+- Fallback chain → `deepLinks.fallbackUrl`, then `url`
+
 ## Local configuration
 
 - `src/UrlShortener.Api/appsettings.json`
@@ -77,5 +101,10 @@ Each provider repository expects:
 
 - `ShortUrls` / `short_urls` table or equivalent collection
 - `ShortUrlAnalytics` / `short_url_analytics` table or equivalent collection
+
+If you want deep-link persistence in SQL providers, add these nullable columns to your URL table:
+
+- SQL Server / MySQL: `DeepLinkIos`, `DeepLinkAndroid`, `DeepLinkDesktop`, `DeepLinkFallback`
+- PostgreSQL: `deep_link_ios`, `deep_link_android`, `deep_link_desktop`, `deep_link_fallback`
 
 You can manage schema with your preferred migration approach (e.g., FluentMigrator, DbUp, Flyway, Liquibase).

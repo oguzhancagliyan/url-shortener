@@ -11,7 +11,10 @@ public sealed class ResolveShortUrlHandler
         _repository = repository;
     }
 
-    public async Task<string?> HandleAsync(string code, CancellationToken cancellationToken)
+    public Task<string?> HandleAsync(string code, CancellationToken cancellationToken) =>
+        HandleAsync(code, userAgent: null, cancellationToken);
+
+    public async Task<string?> HandleAsync(string code, string? userAgent, CancellationToken cancellationToken)
     {
         var shortUrl = await _repository.GetByCodeAsync(code, cancellationToken);
         if (shortUrl is null || shortUrl.IsExpired(DateTimeOffset.UtcNow))
@@ -21,6 +24,6 @@ public sealed class ResolveShortUrlHandler
         }
 
         await _repository.RecordResolutionAsync(code, DateTimeOffset.UtcNow, cancellationToken);
-        return shortUrl.OriginalUrl;
+        return shortUrl.ResolveTarget(userAgent);
     }
 }

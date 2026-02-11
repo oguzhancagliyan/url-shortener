@@ -32,7 +32,11 @@ public sealed class MongoDbShortUrlRepository : BaseInstrumentedRepository, ISho
             Code = shortUrl.Code,
             OriginalUrl = shortUrl.OriginalUrl,
             CreatedAtUtc = shortUrl.CreatedAtUtc.UtcDateTime,
-            ExpiresAtUtc = shortUrl.ExpiresAtUtc?.UtcDateTime
+            ExpiresAtUtc = shortUrl.ExpiresAtUtc?.UtcDateTime,
+            DeepLinkIos = shortUrl.DeepLinks?.IosUrl,
+            DeepLinkAndroid = shortUrl.DeepLinks?.AndroidUrl,
+            DeepLinkDesktop = shortUrl.DeepLinks?.DesktopUrl,
+            DeepLinkFallback = shortUrl.DeepLinks?.FallbackUrl
         };
 
         return _urls.InsertOneAsync(document, cancellationToken: cancellationToken);
@@ -44,7 +48,11 @@ public sealed class MongoDbShortUrlRepository : BaseInstrumentedRepository, ISho
         var document = await _urls.Find(x => x.Code == code).FirstOrDefaultAsync(cancellationToken);
         return document is null
             ? null
-            : ShortUrl.Create(document.Code, document.OriginalUrl, document.ExpiresAtUtc is null ? null : DateTime.SpecifyKind(document.ExpiresAtUtc.Value, DateTimeKind.Utc));
+            : ShortUrl.Create(
+                document.Code,
+                document.OriginalUrl,
+                document.ExpiresAtUtc is null ? null : DateTime.SpecifyKind(document.ExpiresAtUtc.Value, DateTimeKind.Utc),
+                CreateDeepLinks(document));
     }
 
     public async Task RecordResolutionAsync(string code, DateTimeOffset resolvedAtUtc, CancellationToken cancellationToken)
@@ -69,5 +77,15 @@ public sealed class MongoDbShortUrlRepository : BaseInstrumentedRepository, ISho
             TotalResolutions = document.TotalResolutions,
             LastResolvedAtUtc = document.LastResolvedAtUtc
         };
+    }
+
+    private static DeepLinkTargets? CreateDeepLinks(ShortUrlDocument document)
+    {
+        var deepLinks = new DeepLinkTargets(
+            document.DeepLinkIos,
+            document.DeepLinkAndroid,
+            document.DeepLinkDesktop,
+            document.DeepLinkFallback);
+        return deepLinks.HasAny ? deepLinks : null;
     }
 }
